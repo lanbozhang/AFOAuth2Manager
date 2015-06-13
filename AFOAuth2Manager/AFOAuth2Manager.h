@@ -180,6 +180,12 @@
 @property (readonly, nonatomic, copy) NSString *accessToken;
 
 /**
+ Whether the OAuth credentials are expired.
+ */
+@property (readonly, nonatomic, assign, getter = isExpired) BOOL expired;
+
+
+/**
  The OAuth token type (e.g. "bearer").
  */
 @property (readonly, nonatomic, copy) NSString *tokenType;
@@ -192,7 +198,7 @@
 /**
  Whether the OAuth credentials are expired.
  */
-@property (readonly, nonatomic, assign, getter = isExpired) BOOL expired;
+@property (readonly, nonatomic, assign, getter = isRefreshExpired) BOOL refreshExpired;
 
 ///--------------------------------------------
 /// @name Creating and Initializing Credentials

@@ -85,6 +85,7 @@ static NSError * AFErrorFromRFC6749Section5_2Error(id object) {
 @property (readwrite, nonatomic, copy) NSString *serviceProviderIdentifier;
 @property (readwrite, nonatomic, copy) NSString *clientID;
 @property (readwrite, nonatomic, copy) NSString *secret;
+@property (readonly, nonatomic)  BOOL basicAuth;
 @end
 
 @implementation AFOAuth2Manager
@@ -238,21 +239,30 @@ static NSError * AFErrorFromRFC6749Section5_2Error(id object) {
             return;
         }
 
-        NSString *refreshToken = [responseObject valueForKey:@"refresh_token"];
+        NSString *refreshToken = [responseObject valueForKey:@"refreshToken"];
+        NSDate *refreshTokenExpireDate = [NSDate distantFuture];
+
         if (!refreshToken || [refreshToken isEqual:[NSNull null]]) {
             refreshToken = [parameters valueForKey:@"refresh_token"];
+        }else if ([refreshToken isKindOfClass:[NSDictionary class]]){
+            refreshToken = [(NSDictionary*)refreshToken objectForKey:@"value"];
+            
+            id expiresIn = [responseObject valueForKey:@"expiration"];
+            if (expiresIn && ![expiresIn isEqual:[NSNull null]]) {
+                refreshTokenExpireDate = [NSDate dateWithTimeIntervalSinceNow:[expiresIn doubleValue]];
+            }
         }
 
-        AFOAuthCredential *credential = [AFOAuthCredential credentialWithOAuthToken:[responseObject valueForKey:@"access_token"] tokenType:[responseObject valueForKey:@"token_type"]];
+        AFOAuthCredential *credential = [AFOAuthCredential credentialWithOAuthToken:[responseObject valueForKey:@"value"] tokenType:[responseObject valueForKey:@"tokenType"]];
 
 
         if (refreshToken) { // refreshToken is optional in the OAuth2 spec
-            [credential setRefreshToken:refreshToken];
+            [credential setRefreshToken:refreshToken expiration:refreshTokenExpireDate];
         }
 
         // Expiration is optional, but recommended in the OAuth2 spec. It not provide, assume distantFuture === never expires
         NSDate *expireDate = [NSDate distantFuture];
-        id expiresIn = [responseObject valueForKey:@"expires_in"];
+        id expiresIn = [responseObject valueForKey:@"expiration"];
         if (expiresIn && ![expiresIn isEqual:[NSNull null]]) {
             expireDate = [NSDate dateWithTimeIntervalSinceNow:[expiresIn doubleValue]];
         }
@@ -279,9 +289,11 @@ static NSError * AFErrorFromRFC6749Section5_2Error(id object) {
 
 @interface AFOAuthCredential ()
 @property (readwrite, nonatomic, copy) NSString *accessToken;
+@property (readwrite, nonatomic, copy) NSDate *expiration;
+
 @property (readwrite, nonatomic, copy) NSString *tokenType;
 @property (readwrite, nonatomic, copy) NSString *refreshToken;
-@property (readwrite, nonatomic, copy) NSDate *expiration;
+@property (readwrite, nonatomic, copy) NSDate *refreshExpiration;
 @end
 
 @implementation AFOAuthCredential
@@ -331,10 +343,15 @@ static NSError * AFErrorFromRFC6749Section5_2Error(id object) {
 
     self.refreshToken = refreshToken;
     self.expiration = expiration;
+    self.refreshExpiration = expiration;
 }
 
 - (BOOL)isExpired {
     return [self.expiration compare:[NSDate date]] == NSOrderedAscending;
+}
+
+- (BOOL)isRefreshExpired{
+    return [self.refreshExpiration compare:[NSDate date]] == NSOrderedAscending;
 }
 
 #pragma mark Keychain
