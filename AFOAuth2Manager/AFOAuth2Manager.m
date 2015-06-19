@@ -23,6 +23,7 @@
 #import <Security/Security.h>
 
 #import "AFOAuth2Manager.h"
+#import <ISO8601DateFormatter/ISO8601DateFormatter.h>
 
 NSString * const AFOAuth2ErrorDomain = @"com.alamofire.networking.oauth2.error";
 
@@ -239,18 +240,19 @@ static NSError * AFErrorFromRFC6749Section5_2Error(id object) {
             return;
         }
 
+        ISO8601DateFormatter* formatter = [[ISO8601DateFormatter alloc] init];
         NSString *refreshToken = [responseObject valueForKey:@"refreshToken"];
         NSDate *refreshTokenExpireDate = [NSDate distantFuture];
 
         if (!refreshToken || [refreshToken isEqual:[NSNull null]]) {
             refreshToken = [parameters valueForKey:@"refresh_token"];
         }else if ([refreshToken isKindOfClass:[NSDictionary class]]){
+            id expiresIn = [refreshToken valueForKey:@"expiration"];
+            if (expiresIn && ![expiresIn isEqual:[NSNull null]]) {
+                refreshTokenExpireDate = [formatter dateFromString:expiresIn];
+            }
             refreshToken = [(NSDictionary*)refreshToken objectForKey:@"value"];
             
-            id expiresIn = [responseObject valueForKey:@"expiration"];
-            if (expiresIn && ![expiresIn isEqual:[NSNull null]]) {
-                refreshTokenExpireDate = [NSDate dateWithTimeIntervalSinceNow:[expiresIn doubleValue]];
-            }
         }
 
         AFOAuthCredential *credential = [AFOAuthCredential credentialWithOAuthToken:[responseObject valueForKey:@"value"] tokenType:[responseObject valueForKey:@"tokenType"]];
@@ -264,7 +266,7 @@ static NSError * AFErrorFromRFC6749Section5_2Error(id object) {
         NSDate *expireDate = [NSDate distantFuture];
         id expiresIn = [responseObject valueForKey:@"expiration"];
         if (expiresIn && ![expiresIn isEqual:[NSNull null]]) {
-            expireDate = [NSDate dateWithTimeIntervalSinceNow:[expiresIn doubleValue]];
+            expireDate = [formatter dateFromString:expiresIn];
         }
 
         if (expireDate) {
@@ -322,7 +324,7 @@ static NSError * AFErrorFromRFC6749Section5_2Error(id object) {
 }
 
 - (NSString *)description {
-    return [NSString stringWithFormat:@"<%@ accessToken:\"%@\" tokenType:\"%@\" refreshToken:\"%@\" expiration:\"%@\">", [self class], self.accessToken, self.tokenType, self.refreshToken, self.expiration];
+    return [NSString stringWithFormat:@"<%@ accessToken:\"%@\" expiration:\"%@\" tokenType:\"%@\" refreshToken:\"%@\" refresh expiration:\"%@\">", [self class], self.accessToken, self.expiration, self.tokenType, self.refreshToken, self.refreshExpiration];
 }
 
 - (void)setRefreshToken:(NSString *)refreshToken
