@@ -432,14 +432,13 @@ static NSError * AFErrorFromRFC6749Section5_2Error(id object) {
 }
 
 #pragma mark - NSCoding
-
 - (id)initWithCoder:(NSCoder *)decoder {
     self = [super init];
     self.accessToken = [decoder decodeObjectForKey:NSStringFromSelector(@selector(accessToken))];
     self.tokenType = [decoder decodeObjectForKey:NSStringFromSelector(@selector(tokenType))];
     self.refreshToken = [decoder decodeObjectForKey:NSStringFromSelector(@selector(refreshToken))];
     self.expiration = [decoder decodeObjectForKey:NSStringFromSelector(@selector(expiration))];
-
+    self.refreshExpiration = [decoder decodeObjectForKey:NSStringFromSelector(@selector(refreshExpiration))];
     return self;
 }
 
@@ -448,6 +447,9 @@ static NSError * AFErrorFromRFC6749Section5_2Error(id object) {
     [encoder encodeObject:self.tokenType forKey:NSStringFromSelector(@selector(tokenType))];
     [encoder encodeObject:self.refreshToken forKey:NSStringFromSelector(@selector(refreshToken))];
     [encoder encodeObject:self.expiration forKey:NSStringFromSelector(@selector(expiration))];
+    [encoder encodeObject:self.refreshExpiration forKey:NSStringFromSelector(@selector(refreshExpiration))];
+
 }
+
 
 @end
