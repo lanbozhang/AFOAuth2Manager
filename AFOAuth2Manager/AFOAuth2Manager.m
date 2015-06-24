@@ -232,8 +232,11 @@ static NSError * AFErrorFromRFC6749Section5_2Error(id object) {
             return;
         }
 
-        if ([responseObject valueForKey:@"error"]) {
+        if ([responseObject valueForKey:@"detailMessage"]) {
             if (failure) {
+                NSMutableDictionary* responseDict = [responseObject mutableCopy];
+                responseDict[@"error_description"] = responseDict[@"detailMessage"];
+                responseDict[@"error"] = @"Session Error";
                 failure(AFErrorFromRFC6749Section5_2Error(responseObject));
             }
 
@@ -277,9 +280,26 @@ static NSError * AFErrorFromRFC6749Section5_2Error(id object) {
             success(credential);
         }
     } failure:^(__unused AFHTTPRequestOperation *operation, NSError *error) {
-        if (failure) {
-            failure(error);
+        NSDictionary* responseObject = operation.responseObject;
+        if (!responseObject) {
+            if (failure) {
+                failure(error);
+            }
+            
+            return;
         }
+        
+        if ([responseObject valueForKey:@"detailMessage"]) {
+            if (failure) {
+                NSMutableDictionary* responseDict = [responseObject mutableCopy];
+                responseDict[@"error_description"] = responseDict[@"detailMessage"];
+                responseDict[@"error"] = @"Session Error";
+                failure(AFErrorFromRFC6749Section5_2Error(responseDict));
+            }
+            
+            return;
+        }
+
     }];
     
     return requestOperation;
