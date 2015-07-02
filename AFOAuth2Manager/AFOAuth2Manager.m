@@ -369,7 +369,7 @@ static NSError * AFErrorFromRFC6749Section5_2Error(id object) {
 }
 
 - (BOOL)isExpired {
-    return [self.expiration compare:[NSDate date]] == NSOrderedAscending;
+    return [self.expiration compare:[[NSDate date] dateByAddingTimeInterval:-1800]] == NSOrderedAscending;
 }
 
 - (BOOL)isRefreshExpired{
@@ -450,7 +450,11 @@ static NSError * AFErrorFromRFC6749Section5_2Error(id object) {
         return nil;
     }
 
-    return [NSKeyedUnarchiver unarchiveObjectWithData:(__bridge_transfer NSData *)result];
+    AFOAuthCredential* credential = [NSKeyedUnarchiver unarchiveObjectWithData:(__bridge_transfer NSData *)result];
+    
+    NSLog(@"fetch credential with identifier \"%@\" token:%@ expiration:%@ refreshToken:%@ refreshExpiration:%@", identifier, credential.accessToken,
+          credential.expiration, credential.refreshToken, credential.refreshExpiration);
+    return credential;
 }
 
 #pragma mark - NSCoding
