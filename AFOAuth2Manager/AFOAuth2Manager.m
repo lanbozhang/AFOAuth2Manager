@@ -421,6 +421,8 @@ static NSError * AFErrorFromRFC6749Section5_2Error(id object) {
     if (status != errSecSuccess) {
         NSLog(@"Unable to %@ credential with identifier \"%@\" (Error %li)", exists ? @"update" : @"add", identifier, (long int)status);
     }
+    NSLog(@"store credential with identifier \"%@\" token:%@ expiration:%@ refreshToken:%@ refreshExpiration:%@", identifier, credential.accessToken,
+          credential.expiration, credential.refreshToken, credential.refreshExpiration);
 
     return (status == errSecSuccess);
 }
