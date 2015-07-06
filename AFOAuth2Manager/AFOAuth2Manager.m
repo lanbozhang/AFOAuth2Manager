@@ -298,6 +298,9 @@ static NSError * AFErrorFromRFC6749Section5_2Error(id object) {
             }
             
             return;
+        }else{
+            failure(AFErrorFromRFC6749Section5_2Error(responseObject));
+            return;
         }
 
     }];
